@@ -1,0 +1,363 @@
+#
+#	META
+#
+
+proc 'intMax' maps [] to y by {
+	i:=1;
+	while 2^i > 0 do i:=i+1 done;
+	y:=2^(i-1) 
+} endproc
+
+proc 'intMin' maps [] to y by {
+	return -intMax
+} endproc
+
+#
+#	PRIMES
+#
+
+proc 'nextPrime' maps x to y by { 
+	y:=x+1; 
+	while ¬isPrime(y) do { 
+		y:=y+1
+	} done 
+} endproc
+
+proc 'nextMersennePrime' maps x to y by {
+	y:=x+1;
+	p:=round(log(y)/log(2))+1;
+	while ¬isPrime(2^p-1) do {
+		p:=p+1
+	} done;
+	y:=2^p-1
+} endproc
+
+proc 'isMersennePrime' maps x to y by {
+	y:=0;	
+	if isPrime(x) then {
+		v:=(2^round(log(x+1)/log(2)))-1;
+		y:=(x==v)
+	} endif
+} endproc
+
+proc 'decompose' maps x to y by {
+	fac:=2;
+	y:=[];
+	while x > 1 do {
+		while evalf(x/fac)==round(evalf(x/fac)) do {
+			x:=x/fac;
+			concat$(y,[fac])
+		} done;
+		fac:=nextPrime(fac)	
+	} done
+} endproc
+
+proc 'primeCount' maps x to y by {
+	y:=0;
+	x:=x-1;
+	while x > 1 do {
+		if isPrime(x) then y:=y+1 endif; 
+		x:=x-1
+	} done
+} endproc
+
+#
+#	EXPONENTIAL
+#
+
+proc 'log10' maps x to y by {
+	y:=log(x)/log(10)
+} endproc
+
+proc 'log2' maps x to y by {
+	y:=log(x)/log(2)
+} endproc
+
+#
+#	COMBINATORIAL
+#
+
+proc 'fac' maps x to y by {
+	y:=1;
+	i:=round(x);
+	while i>1 do {
+		y:=y*i;
+		i:=i-1
+	} done
+} endproc
+
+proc 'C' maps [x,y] to z by {
+	k:=x-y+1;
+	t:=1;
+	while k<=x do {
+		t:=t*k;
+		k:=k+1
+	} done;
+	z:=t/fac(y)	
+} endproc
+
+#
+#	VECTORS
+#
+
+proc 'max' maps x to y by {
+	y := select$(x,0);
+	i := 0;
+	while i < length$(x) do {
+		if select$(x,i) > y then y:=select$(x,i) endif;
+		i:=i+1
+	} done
+} endproc
+
+proc 'min' maps x to y by {
+	y := select$(x,0);
+	i := 0;
+	while i < length$(x) do {
+		if select$(x,i) < y then y:=select$(x,i) endif;
+		i:=i+1
+	} done
+} endproc
+
+proc 'avg' maps x to y by {
+	y := 0;
+	i := 0;
+	while i < length$(x) do {
+		y := y + select$(x,i);
+		i := i + 1
+	} done;
+	y:=evalf(y/length$(x))
+} endproc
+
+proc 'dev' maps x to y by {
+	a := avg(x);
+	y := 0;
+	i := 0;
+	while i < length$(x) do {
+		y := y + (select$(x,i)-a)^2;
+		i := i + 1
+	} done;
+	y := evalf((y/length$(x))^0.5)
+} endproc
+
+proc 'norm' maps x to y by {
+	y := 0;
+	i := 0;
+	while i < length$(x) do {
+		y := y+select$(x,i)*select$(x,i);
+		i := i+1
+	} done;
+	y := evalf(y ^ (0.5))
+} endproc
+
+proc 'normalize' maps x to y by {
+	l := norm(x);
+	y := [];
+	i := 0;
+	while i < length$(x) do {
+		y := concat(y,[select$(x,i)/l]);
+		i:=i+1
+	} done
+} endproc
+
+#
+#	MATRICES
+#
+
+proc 'rows' maps x to y by {
+	y:=length$(x)
+} endproc
+
+proc 'cols' maps x to y by {
+	r:=rows(x);
+	if r>0 then y:=length(select$(x,0)) endif;
+	if r==0 then y:=0 endif
+} endproc
+
+proc 'unitMatrix' maps [r,c] to y by {
+	y:=[];
+	i:=0;
+	while i < r do {
+		v:=[];
+		j:=0;
+		while j < c do {			
+			v:=concat(v,[i==j]);
+			j:=j+1
+		} done;
+		y:=concat(y,[v]);
+		i:=i+1
+	} done
+} endproc
+
+proc 'transpose' maps x to y by {
+	y:=[];
+	i:=0;
+	r:=rows(x);
+	c:=cols(x);
+	while i<c do {
+		v:=[];
+		j:=0;
+		while j<r do {
+			v:=concat(v,[select(x,[j,i])]);
+			j:=j+1
+		} done;
+		y:=concat(y,[v]);
+		i:=i+1
+	} done
+} endproc
+
+proc 'mmul' maps [a,b] to y by {
+	rA := rows(a);
+	cA := cols(a);
+	rB := rows(b);
+	cB := cols(b);
+	if cA == rB then {
+		i:=0;
+		y:=[];
+		while i < rA do {
+			j := 0;
+			row := [];
+			while j < cB do {
+				k:=0;
+				e:=0;
+				while k<cA do {
+					e:=e+select$(a,[i,k])*select$(b,[k,j]);
+					k:=k+1
+				} done;
+				j:=j+1;
+				row:=concat(row,[e])
+			} done;
+			i:=i+1;
+			y:=concat(y,[row])			
+		} done		
+	} endif
+} endproc
+
+proc 'mpow' maps [x,k] to y by {
+	if rows(x)==cols(x) then {
+		i := 1;
+		y := x;
+		while i<k do{
+			y := mmul(y,x);
+			i:=i+1
+		} done
+	} endif
+} endproc
+
+proc 'powerIteration' maps x to y by {
+
+	r := rows(x);
+	c := cols(x);
+
+#	create initial vector
+
+	i := 0;
+	m := [];
+	while i<c do {
+		concat$(m,[[1]]);
+		i:=i+1
+	} done;
+
+	prevMax := 1;
+
+	k:=0;
+	diff:=1;
+	while (k<100 && diff>0.0000000001) do {
+
+		n := mmul(x,m);
+	
+#		determine largest element ( in absolute value ) of n
+
+		newMax := select$(n,[0,0]);	
+		i:=0;
+		while i<c do {
+			if abs(select$(n,[i,0]))>abs(newMax) then newMax:=select$(n,[i,0]) endif;
+			i:=i+1
+		}done;
+
+#		normalize n by dividing by the largest element
+
+		nn:=[];
+		i:=0;
+		while i<c do {
+			concat$(nn,[[evalf(select$(n,[i,0])/newMax)]]);
+			i:=i+1	
+		}done;
+
+# 		determine || m - nn || as a measure of precision 
+
+		diff:=0;
+		i:=0;
+		while i<c do {
+			diff:=diff+(select$(m,[i,0])-select$(nn,[i,0]))^2;
+			i:=i+1
+		} done;
+		diff:=diff^(0.5);
+
+#		get everything ready for the next step of the iteration
+
+		m:=nn;
+		k:=k+1
+	
+	}done;
+
+	y:=nn
+
+} endproc
+
+proc 'spectralRadius' maps x to y by {
+
+	domEigVec := powerIteration(x);
+	eigVecMul := mmul(x,domEigVec);
+	
+	i := 0;	
+	m := 0;
+
+	while i < rows(eigVecMul) do {	
+		k := select(eigVecMul,[i,0]) / select(domEigVec,[i,0]);
+		if ( abs(k) > abs(m) ) || ( i==0 ) then m:=k endif;
+		i := i + 1	
+	} done;
+
+	y := m
+
+} endproc
+
+proc 'jacobiMatrix' maps [f,x] to y by {
+	i:=0;
+	m := [];
+	while i < length$(f) do {
+		j:=0;
+		r := [];
+		while j < length$(x) do {
+			concat$(r,[Deriv(select$(f,i),select$(x,i))]);
+			j:=j+1		
+		} done;
+		concat$(m,[r]);
+		i:=i+1
+	} done;
+	y := m
+} endproc
+
+#
+#	FUNCTIONS
+#
+
+proc 'bisectionSingleRoot' maps [f,x,a,b] to y by {
+	va:=subs(f,[x],[a]);
+	vb:=subs(f,[x],[b]);
+	if ((va>0 && vb<0) || (va<0 && vb>0)) then {
+		k := 0;	
+		err := 1;
+		while (k<100 || err>0.000001) do {
+			m := evalf((a+b)/2);
+			v := subs(f,[x],[m]);
+			err := abs(v);		
+			if v > 0 then b := m endif;
+			if v < 0 then a := m endif;
+			if v == 0 then {y := v ; k := 100} endif;
+			k := k + 1
+		} done;
+		y:=m
+	} endif
+} endproc
+
